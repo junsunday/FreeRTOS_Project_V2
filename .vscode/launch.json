@@ -1,0 +1,51 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "executable": "build/Debug/FreeRTOS_Project_V2.elf",
+            "name": "Debug with JLink (Custom)",
+            "request": "launch",
+            "type": "cortex-debug",
+            "device": "STM32F103ZE",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none",
+            "servertype": "jlink",
+            "interface": "swd", 
+            "serialNumber": "", // 可选，指定J-Link序列号
+            "svdFile": "", // 可选，填写SVD文件路径以获得寄存器视图
+            "preLaunchTask": "", // 可选，指定预编译任务
+            "serverpath": "E:/ARM_development/JLink_V816/JLinkGDBServerCL.exe", // 修改为你本地JLinkGDBServerCL.exe的实际路径
+            "configFiles": [],
+            //"deviceType": "stm32",
+            "gdbTarget": "localhost:2331",
+            "jlinkscript": "", // 可选，指定JLink脚本
+            //"ipAddress": "", // 可选，远程调试时填写
+            "rtos": "FreeRTOS",
+            "svdPath": "", // 可选
+            "swoConfig": {},
+            //"jlinkDevice": "STM32F103ZE", // 可选，填写具体芯片型号，如 STM32F103C8
+            "serverArgs": [
+            "-if", "swd", // 或 "jtag"
+            "-speed", "4000" // 降低通信速率，单位kHz，可根据需要调整
+            ]
+        },
+        {
+            "type": "jlinkgdbtarget",
+            "request": "launch",
+            "name": "STM32Cube: Launch JLink GDB Server",
+            "origin": "snippet",
+            "cwd": "${workspaceFolder}",
+            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
+            "runEntry": "main",
+            "imagesAndSymbols": [
+                {
+                    "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
+                }
+            ]
+        }
+    ]
+}
