@@ -77,9 +77,6 @@ void UartAdapterTask(void *argument)
         if (osSemaphoreAcquire(BinarySemUartHandle, osWaitForever) == osOK) {
             UartReceiveCallback(Rx_Data); // 处理接收到的字节
         }
-        
-        // // ✅ 关键修复: 添加延时,让出CPU给其他任务(如CommandDispatcher)
-        // osDelay(1);
     }
 }
 

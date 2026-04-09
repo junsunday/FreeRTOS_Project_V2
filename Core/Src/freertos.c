@@ -78,7 +78,7 @@ osThreadId_t CommandDispTaskHandle;
 const osThreadAttr_t CommandDispTask_attributes = {
   .name = "CommandDispTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for RespoMangerTask */
 osThreadId_t RespoMangerTaskHandle;
