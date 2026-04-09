@@ -9,6 +9,8 @@
 
 #include "InputAdapters.h"
 #include "CommandDef.h"
+#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "main.h"
 #include "usart.h"
 #include <stdint.h>
@@ -41,7 +43,6 @@ typedef struct {
 /* ========== 私有变量 ========== */
 static osMessageQueueId_t s_cmdQueue = NULL;
 static ProtocolParser_t s_parser = {0};
-static uint8_t s_rxByte = 0;
 
 /* ========== 私有函数声明 ========== */
 static uint8_t CalculateChecksum(const uint8_t *data, uint16_t length);
@@ -67,15 +68,18 @@ void UartInputAdapter_Init(osMessageQueueId_t cmdQueue)
 /**
   * @brief  UART输入适配器任务
   */
-void UartInputAdapter_Task(void *argument)
+void UartAdapterTask(void *argument)
 {
+    printf("[UART Adapter] Task started\n");
+    
     for (;;) {
         // 从消息队列读取串口数据(由中断回调发送)
-        if (osMessageQueueGet(CommandQueueHandle, &s_rxByte, NULL, 10) == osOK) {
-            UartReceiveCallback(s_rxByte);
+        if (osSemaphoreAcquire(BinarySemUartHandle, osWaitForever) == osOK) {
+            UartReceiveCallback(Rx_Data); // 处理接收到的字节
         }
         
-        osDelay(5);
+        // // ✅ 关键修复: 添加延时,让出CPU给其他任务(如CommandDispatcher)
+        // osDelay(1);
     }
 }
 
@@ -126,7 +130,6 @@ static uint8_t ValidateFrame(const uint8_t *data, uint16_t totalLen, uint16_t pa
   */
 static void ProcessCompleteFrame(void)
 {
-    Command_t cmd;
     uint16_t payloadLen = s_parser.expectedLength;
     uint16_t totalLen = FRAME_OVERHEAD + payloadLen;
     
@@ -136,24 +139,33 @@ static void ProcessCompleteFrame(void)
         return;
     }
     
-    // 构建标准命令
-    cmd.source = CMD_SRC_UART;
-    cmd.command_id = s_parser.buffer[FRAME_HEADER_SIZE + FRAME_LENGTH_SIZE + FRAME_FLAG_SIZE]; // payload第1字节为命令ID
-    cmd.payload_len = payloadLen - 1; // 减去命令ID字节
-    
-    if (cmd.payload_len > 0 && cmd.payload_len <= CMD_PAYLOAD_MAX_LEN) {
-        memcpy(cmd.payload, &s_parser.buffer[FRAME_HEADER_SIZE + FRAME_LENGTH_SIZE + FRAME_FLAG_SIZE + 1], 
-               cmd.payload_len);
+    // ⚠️ 从堆分配命令对象
+    Command_t *cmd = pvPortMalloc(sizeof(Command_t));
+    if (cmd == NULL) {
+        printf("[UART Adapter] ❌ Memory allocation failed\n");
+        return;
     }
     
-    cmd.timestamp = osKernelGetTickCount();
+    // 构建标准命令
+    cmd->source = CMD_SRC_UART;
+    cmd->command_id = s_parser.buffer[FRAME_HEADER_SIZE + FRAME_LENGTH_SIZE + FRAME_FLAG_SIZE];
+    cmd->payload_len = payloadLen - 1; // 减去命令ID字节
     
-    // 发送到命令队列
-    if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 10) != osOK) {
-        printf("[UART Adapter] Command queue full\n");
+    if (cmd->payload_len > 0 && cmd->payload_len <= CMD_PAYLOAD_MAX_LEN) {
+        memcpy(cmd->payload, &s_parser.buffer[FRAME_HEADER_SIZE + FRAME_LENGTH_SIZE + FRAME_FLAG_SIZE + 1], 
+               cmd->payload_len);
+    }
+    
+    cmd->timestamp = osKernelGetTickCount();
+    
+    // ✅ 发送指针到队列(所有权转移)
+    // 注意: 这要求 s_cmdQueue 创建时的 item_size 为 sizeof(Command_t*)
+    if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 100) != osOK) {
+        vPortFree(cmd);  // ⚠️ 发送失败必须释放!
+        printf("[UART Adapter] Command queue full (timeout after 100ms)\n");
     } else {
-        // 调试回传: 将完整帧发回串口
-        HAL_UART_Transmit(&huart1, s_parser.buffer, totalLen, HAL_MAX_DELAY);
+        // 调试回传(可选)
+        // HAL_UART_Transmit(&huart1, s_parser.buffer, totalLen, HAL_MAX_DELAY);
     }
 }
 

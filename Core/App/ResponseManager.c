@@ -37,25 +37,35 @@ void ResponseManager_Init(osMessageQueueId_t respQueue)
 /**
   * @brief  响应管理器任务
   */
-void ResponseManager_Task(void *argument)
+void ResponseManagerTask(void *argument)
 {
-    Response_t resp;
+    printf("[Response Manager] Task started\n");
     
     for (;;) {
-        // 从响应队列接收响应(阻塞等待)
+        Response_t *resp = NULL;  // ⚠️ 使用指针
+        
+        // 从响应队列接收响应指针(阻塞等待)
         if (osMessageQueueGet(s_respQueue, &resp, NULL, osWaitForever) == osOK) {
+            if (resp == NULL) {
+                printf("[ResponseMgr] ❌ Received NULL response pointer\n");
+                continue;
+            }
+            
             // 根据目标通道发送响应
-            if (resp.target_channel == CHAN_HID || resp.target_channel == CHAN_BOTH) {
-                if (SendToHID(&resp) != 0) {
+            if (resp->target_channel == CHAN_HID || resp->target_channel == CHAN_BOTH) {
+                if (SendToHID(resp) != 0) {
                     printf("[ResponseMgr] HID send failed\n");
                 }
             }
             
-            if (resp.target_channel == CHAN_UART || resp.target_channel == CHAN_BOTH) {
-                if (SendToUART(&resp) != 0) {
+            if (resp->target_channel == CHAN_UART || resp->target_channel == CHAN_BOTH) {
+                if (SendToUART(resp) != 0) {
                     printf("[ResponseMgr] UART send failed\n");
                 }
             }
+            
+            // ✅ 响应发送完毕,释放内存
+            RESP_FREE(resp);
         }
     }
 }

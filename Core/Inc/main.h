@@ -44,9 +44,11 @@ extern "C" {
 extern osMessageQueueId_t CommandQueueHandle;
 extern osMessageQueueId_t LEDStateQueueHandle;
 extern osSemaphoreId_t BinarySemButtonHandle;
+extern osSemaphoreId_t BinarySemUartHandle;
 extern osEventFlagsId_t LedTriggerEventHandle;
 extern osTimerId_t BreathLedTimerHandle;
 extern osTimerId_t BrtLedStaTimerHandle; 
+extern uint8_t Rx_Data;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -59,8 +61,24 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void StartReceive_IT(UART_HandleTypeDef *huartx);
-void StartvSerialHandlerTask(void *argument);
-void StartLedTask(void *argument);
+// 调试函数: 打印任务列表(含栈溢出检测)
+void PrintTaskList(void);
+// 检查指定任务的栈使用情况
+void CheckTaskStack(const char *taskName);
+
+#ifdef DEBUG_MEMORY
+// 内存泄漏检测
+void memory_stats_print(void);
+#endif
+
+#if USE_MEMORY_POOL
+// 内存池初始化(可选优化方案)
+void MemPool_Init(void);
+#endif
+
+// 旧的任务声明已废弃,保留仅用于兼容
+// void StartvSerialHandlerTask(void *argument);
+// void StartLedTask(void *argument);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

@@ -137,7 +137,7 @@ HidInputAdapter_ProcessData()
     ↓
 osMessageQueuePut(CommandQueueHandle)
     ↓
-CommandDispatcher_Task 接收命令
+CommandDispatcherTask 接收命令
     ↓
 查找处理器 (未找到,返回错误) 或 路由到对应业务模块
     ↓
@@ -145,7 +145,7 @@ CommandDispatcher_Task 接收命令
     ↓
 osMessageQueuePut(ResponseQueueHandle)
     ↓
-ResponseManager_Task 接收响应
+ResponseManagerTask 接收响应
     ↓
 根据 target_channel 发送到 HID/UART
 ```
@@ -159,7 +159,7 @@ HAL_UART_RxCpltCallback 中断回调
     ↓
 osMessageQueuePut(CommandQueueHandle, &rxByte)
     ↓
-UartInputAdapter_Task 接收字节
+UartAdapterTask 接收字节
     ↓
 协议解析状态机处理
     ↓
@@ -167,7 +167,7 @@ UartInputAdapter_Task 接收字节
     ↓
 osMessageQueuePut(CommandQueueHandle)
     ↓
-CommandDispatcher_Task 接收命令
+CommandDispatcherTask 接收命令
     ↓
 路由到 LedController_HandleCommand()
     ↓
@@ -177,7 +177,7 @@ CommandDispatcher_Task 接收命令
     ↓
 osMessageQueuePut(ResponseQueueHandle)
     ↓
-ResponseManager_Task 接收响应
+ResponseManagerTask 接收响应
     ↓
 构建UART协议帧并发送
 ```
@@ -185,7 +185,7 @@ ResponseManager_Task 接收响应
 ### 3.3 按钮触发呼吸灯流程
 
 ```
-ButtonInputAdapter_Task 轮询GPIO
+ButtonAdapterTask 轮询GPIO
     ↓
 检测到上升沿 + 消抖确认
     ↓
@@ -193,7 +193,7 @@ ButtonInputAdapter_Task 轮询GPIO
     ↓
 osMessageQueuePut(CommandQueueHandle)
     ↓
-CommandDispatcher_Task 接收命令
+CommandDispatcherTask 接收命令
     ↓
 路由到 LedController_HandleCommand()
     ↓
@@ -205,7 +205,7 @@ CommandDispatcher_Task 接收命令
     ↓
 osMessageQueuePut(ResponseQueueHandle)
     ↓
-ResponseManager_Task 发送到 HID + UART
+ResponseManagerTask 发送到 HID + UART
 ```
 
 ## 4. 扩展指南
@@ -276,7 +276,7 @@ CommandDispatcher_RegisterHandler(CMD_MOTOR_SPEED_SET, MotorController_HandleCom
 **步骤**:
 1. 在 `CommandDef.h` 中定义新的通道宏 (如 `#define CHAN_CAN 0x04`)
 2. 在 `ResponseManager.c` 中添加发送函数 `SendToCAN()`
-3. 在 `ResponseManager_Task()` 中添加通道判断分支
+3. 在 `ResponseManagerTask()` 中添加通道判断分支
 
 **示例**: 添加CAN总线输出
 ```c
@@ -299,7 +299,7 @@ static int8_t SendToCAN(Response_t *resp) {
 
 ### 5.1 查看命令流
 
-在 `CommandDispatcher_Task` 中添加日志:
+在 `CommandDispatcherTask` 中添加日志:
 ```c
 printf("[Dispatcher] Received cmd: src=0x%02X, id=0x%02X, len=%d\n", 
        cmd.source, cmd.command_id, cmd.payload_len);
@@ -307,7 +307,7 @@ printf("[Dispatcher] Received cmd: src=0x%02X, id=0x%02X, len=%d\n",
 
 ### 5.2 查看响应流
 
-在 `ResponseManager_Task` 中添加日志:
+在 `ResponseManagerTask` 中添加日志:
 ```c
 printf("[ResponseMgr] Sending resp: cmd=0x%02X, status=0x%02X, chan=0x%02X\n",
        resp->command_id, resp->status, resp->target_channel);
@@ -346,12 +346,12 @@ void LedController_HandleCommand(...) {
 ❌ **禁止跨层调用**
 ```c
 // 错误: 输入适配器直接调用业务逻辑
-HidInputAdapter_Task() {
+HidAdapterTask() {
     LedController_SetState(...); // ❌
 }
 
 // 正确: 通过命令队列通信
-HidInputAdapter_Task() {
+HidAdapterTask() {
     osMessageQueuePut(CommandQueueHandle, &cmd, ...); // ✅
 }
 ```

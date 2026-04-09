@@ -30,7 +30,7 @@ void HidInputAdapter_Init(osMessageQueueId_t cmdQueue);
   * @param  argument: 未使用
   * @retval None
   */
-void HidInputAdapter_Task(void *argument);
+void HidAdapterTask(void *argument);
 
 /**
   * @brief  处理HID接收数据(在中断或回调中调用)
@@ -53,7 +53,7 @@ void UartInputAdapter_Init(osMessageQueueId_t cmdQueue);
   * @param  argument: 未使用
   * @retval None
   */
-void UartInputAdapter_Task(void *argument);
+void UartAdapterTask(void *argument);
 
 /* ========== Button输入适配器 ========== */
 /**
@@ -68,7 +68,7 @@ void ButtonInputAdapter_Init(osMessageQueueId_t cmdQueue);
   * @param  argument: 未使用
   * @retval None
   */
-void ButtonInputAdapter_Task(void *argument);
+void ButtonAdapterTask(void *argument);
 
 #ifdef __cplusplus
 }

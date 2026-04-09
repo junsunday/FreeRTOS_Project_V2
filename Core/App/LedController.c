@@ -19,9 +19,9 @@ extern osTimerId_t BrtLedStaTimerHandle;
 extern void BreathLedCallback(void *argument);
 extern void BrtLedStaCallback(void *argument);
 
-static uint8_t s_timerOn = 0;
-static uint16_t s_brightness = 0;
-static int8_t s_direction = 1;
+static uint8_t s_timerOn = 0;       // 0:未启动,1:启动
+static uint16_t s_brightness = 0;   // 呼吸灯亮度(0-1000)
+static int8_t s_direction = 1;      // 呼吸灯亮度变化方向(1:增加, -1:减少)
 
 /* ========== 私有函数声明 ========== */
 static void UpdateLEDState(uint8_t ledState);
@@ -103,7 +103,7 @@ void LedController_StartBreath(void)
         printf("[LED Controller] Breath mode started\n");
     } else {
         // 已经在运行,重置定时器
-        osTimerStart(BrtLedStaTimerHandle, 0);
+        osTimerStart(BrtLedStaTimerHandle, 10000);
         printf("[LED Controller] Breath timer reset\n");
     }
 }

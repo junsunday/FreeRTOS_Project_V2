@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-
+#include "FReeRTOS.h"
 /* ========== 命令来源定义 ========== */
 #define CMD_SRC_HID       0x01   // HID USB输入
 #define CMD_SRC_UART      0x02   // 串口输入
@@ -68,6 +68,28 @@ typedef struct {
 #define CHAN_HID        0x01
 #define CHAN_UART       0x02
 #define CHAN_BOTH       0x03
+
+/* ========== 内存管理宏(用于调试) ========== */
+#ifdef DEBUG_MEMORY
+#define CMD_MALLOC()    debug_malloc(sizeof(Command_t), __FILE__, __LINE__)
+#define CMD_FREE(ptr)   debug_free(ptr, __FILE__, __LINE__)
+#define RESP_MALLOC()   debug_malloc(sizeof(Response_t), __FILE__, __LINE__)
+#define RESP_FREE(ptr)  debug_free(ptr, __FILE__, __LINE__)
+#else
+#define CMD_MALLOC()    pvPortMalloc(sizeof(Command_t))
+#define CMD_FREE(ptr)   vPortFree(ptr)
+#define RESP_MALLOC()   pvPortMalloc(sizeof(Response_t))
+#define RESP_FREE(ptr)  vPortFree(ptr)
+#endif
+
+/**
+  * @brief  调试版内存分配(记录分配位置)
+  */
+#ifdef DEBUG_MEMORY
+void* debug_malloc(size_t size, const char *file, int line);
+void debug_free(void *ptr, const char *file, int line);
+void memory_stats_print(void);
+#endif
 
 #ifdef __cplusplus
 }

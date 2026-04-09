@@ -28,9 +28,8 @@ void ButtonInputAdapter_Init(osMessageQueueId_t cmdQueue)
 /**
   * @brief  Button输入适配器任务
   */
-void ButtonInputAdapter_Task(void *argument)
+void ButtonAdapterTask(void *argument)
 {
-    Command_t cmd;
     uint8_t lastState = GPIO_PIN_RESET;
     uint8_t currentState;
     
@@ -45,16 +44,23 @@ void ButtonInputAdapter_Task(void *argument)
             
             // 再次确认
             if (HAL_GPIO_ReadPin(ButtonWKUP_GPIO_Port, ButtonWKUP_Pin) == GPIO_PIN_SET) {
-                // 构建命令
-                cmd.source = CMD_SRC_BUTTON;
-                cmd.command_id = CMD_LED_BREATH_START; // 按钮触发呼吸灯
-                cmd.payload[0] = 0x01; // 参数: 启动
-                cmd.payload_len = 1;
-                cmd.timestamp = osKernelGetTickCount();
-                
-                // 发送到命令队列
-                if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 10) != osOK) {
-                    printf("[Button Adapter] Command queue full\n");
+                // ⚠️ 从堆分配命令对象
+                Command_t *cmd = CMD_MALLOC();
+                if (cmd == NULL) {
+                    printf("[Button Adapter] ❌ Memory allocation failed\n");
+                } else {
+                    // 构建命令
+                    cmd->source = CMD_SRC_BUTTON;
+                    cmd->command_id = CMD_LED_BREATH_START;
+                    cmd->payload[0] = 0x01;
+                    cmd->payload_len = 1;
+                    cmd->timestamp = osKernelGetTickCount();
+                    
+                    // ✅ 发送指针到队列(所有权转移)
+                    if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 10) != osOK) {
+                        CMD_FREE(cmd);  // ⚠️ 发送失败必须释放!
+                        printf("[Button Adapter] Command queue full\n");
+                    }
                 }
             }
         }

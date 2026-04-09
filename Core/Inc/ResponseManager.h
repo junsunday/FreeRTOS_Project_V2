@@ -30,7 +30,7 @@ void ResponseManager_Init(osMessageQueueId_t respQueue);
   * @param  argument: 未使用
   * @retval None
   */
-void ResponseManager_Task(void *argument);
+void ResponseManagerTask(void *argument);
 
 /**
   * @brief  发送响应到指定通道

@@ -12,6 +12,8 @@
 #include "main.h"
 #include "usbd_custom_hid_if.h"
 #include "usb_device.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -21,7 +23,7 @@ static uint8_t s_hidBuffer[64] = {0};
 static volatile uint8_t s_dataReady = 0;
 
 /* ========== 私有函数声明 ========== */
-static void HidDataCallback(uint8_t *data, uint16_t len);
+// static void HidDataCallback(uint8_t *data, uint16_t len);
 
 /* ========== 公共函数实现 ========== */
 
@@ -54,22 +56,30 @@ void HidInputAdapter_ProcessData(uint8_t *data, uint16_t len)
 /**
   * @brief  HID输入适配器任务
   */
-void HidInputAdapter_Task(void *argument)
+void HidAdapterTask(void *argument)
 {
-    Command_t cmd;
-    
     for (;;) {
         // 检查是否有新数据
         if (s_dataReady) {
-            // 构建标准命令结构
-            cmd.source = CMD_SRC_HID;
-            cmd.command_id = CMD_DATA_PASSTHROUGH; // HID默认为透传模式
-            memcpy(cmd.payload, s_hidBuffer, 64);
-            cmd.payload_len = 64;
-            cmd.timestamp = osKernelGetTickCount();
+            // 从堆分配命令对象
+            Command_t *cmd = pvPortMalloc(sizeof(Command_t));
+            if (cmd == NULL) {
+                printf("[HID Adapter] ❌ Memory allocation failed\n");
+                osDelay(10);
+                continue;
+            }
             
-            // 发送到命令队列
+            // 填充命令数据
+            cmd->source = CMD_SRC_HID;
+            cmd->command_id = CMD_DATA_PASSTHROUGH; // HID默认为透传模式
+            memcpy(cmd->payload, s_hidBuffer, 64);
+            cmd->payload_len = 64;
+            cmd->timestamp = osKernelGetTickCount();
+            
+            // 发送指针到队列(所有权转移)
+            // 注意：这里假设消息队列配置为接受指针大小 (sizeof(Command_t*))
             if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 10) != osOK) {
+                vPortFree(cmd);  // 发送失败必须释放!
                 printf("[HID Adapter] Command queue full\n");
             }
             

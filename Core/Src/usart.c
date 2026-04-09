@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "usart.h"
+#include "cmsis_os2.h"
 
 /* USER CODE BEGIN 0 */
 #include <stdio.h>
@@ -145,7 +146,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART1)
   {
-    osMessageQueuePut(CommandQueueHandle, &Rx_Data, 0, 0);
+    osSemaphoreRelease(BinarySemUartHandle); // 通知uart任务有数据
     HAL_UART_Receive_IT(&huart1, &Rx_Data, 1);
   }
   

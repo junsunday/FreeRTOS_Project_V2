@@ -89,7 +89,7 @@
 
 /** CUSTOMHID Interface callback. */
 extern USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops_FS;
-extern uint8_t usbRecFlag;
+
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
 /* USER CODE END EXPORTED_VARIABLES */

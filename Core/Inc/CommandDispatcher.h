@@ -31,7 +31,7 @@ void CommandDispatcher_Init(osMessageQueueId_t cmdQueue, osMessageQueueId_t resp
   * @param  argument: 未使用
   * @retval None
   */
-void CommandDispatcher_Task(void *argument);
+void CommandDispatcherTask(void *argument);
 
 /**
   * @brief  注册命令处理回调函数
