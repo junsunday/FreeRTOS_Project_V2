@@ -9,6 +9,7 @@
 
 #include "InputAdapters.h"
 #include "CommandDef.h"
+#include "cmsis_os2.h"
 #include "main.h"
 #include <stdio.h>
 
@@ -50,10 +51,14 @@ void ButtonAdapterTask(void *argument)
                     printf("[Button Adapter] ❌ Memory allocation failed\n");
                 } else {
                     // 构建命令
+                    // cmd->source = CMD_SRC_BUTTON;
+                    // cmd->command_id = CMD_LED_BREATH_START;
+                    // cmd->payload[0] = 0x01;
+                    // cmd->payload_len = 1;
                     cmd->source = CMD_SRC_BUTTON;
-                    cmd->command_id = CMD_LED_BREATH_START;
-                    cmd->payload[0] = 0x01;
-                    cmd->payload_len = 1;
+                    cmd->command_id = CMD_OLED_CTRL;
+                    cmd->payload[0] = 0x11;
+                    cmd->payload_len = 1;                    
                     cmd->timestamp = osKernelGetTickCount();
                     
                     // ✅ 发送指针到队列(所有权转移)
@@ -66,6 +71,26 @@ void ButtonAdapterTask(void *argument)
         }
         
         lastState = currentState;
+        if (osEventFlagsWait(LedTriggerEventHandle, LED_TRIGGER_EVENT_BUTTON, osFlagsWaitAny, 10) == osOK) {
+            // 从堆分配命令对象
+            Command_t *cmd = CMD_MALLOC();
+            if (cmd == NULL) {
+                printf("[Button Adapter] ❌ Memory allocation failed\n");
+            } else {
+                // 构建命令
+                cmd->source = CMD_SRC_BUTTON;
+                cmd->command_id = CMD_OLED_CTRL;
+                cmd->payload[0] = 0x11;
+                cmd->payload_len = 1;
+                cmd->timestamp = osKernelGetTickCount();
+                
+                // ✅ 发送指针到队列(所有权转移)
+                if (osMessageQueuePut(s_cmdQueue, &cmd, 0, 10) != osOK) {
+                    CMD_FREE(cmd);  // ⚠️ 发送失败必须释放!
+                    printf("[Button Adapter] Command queue full\n");
+                }
+            }
+        }
         osDelay(10); // 10ms轮询间隔
     }
 }

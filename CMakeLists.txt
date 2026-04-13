@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/App/ResponseManager.c
     Core/App/LedController.c
     Core/App/SystemMonitor.c
+    # Core/App/OledShowController.c
 )
 
 # Add include paths
@@ -77,3 +78,11 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+
+# Enable printf float support for newlib-nano (GCC)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+        -Wl,-u,_printf_float
+        -Wl,-u,_scanf_float
+    )
+endif()

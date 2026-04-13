@@ -9,6 +9,7 @@
 
 #include "CommandDispatcher.h"
 #include "LedController.h"
+// #include "OledShowController.h"
 #include "SystemMonitor.h"
 #include "cmsis_os2.h"
 #include "main.h"
@@ -60,7 +61,24 @@ void HID_test(Command_t *cmd, Response_t *resp)
         memcpy(resp->data, cmd->payload, resp->data_len);
     }
 }
-
+extern MPU6050Frame_t s_mpu6050Data;
+void MPU6050_HandleCommand(Command_t *cmd, Response_t *resp)
+{
+        if (cmd == NULL || resp == NULL) {
+        return;
+    }
+    
+    printf("status: %.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", 
+                       s_mpu6050Data.accel[0], s_mpu6050Data.accel[1], s_mpu6050Data.accel[2],
+                       s_mpu6050Data.gyro[0], s_mpu6050Data.gyro[1], s_mpu6050Data.gyro[2],
+                       s_mpu6050Data.angle[0], s_mpu6050Data.angle[1], s_mpu6050Data.angle[2],
+                       s_mpu6050Data.temperature);
+    // 构建响应(回显数据)
+    resp->data_len = cmd->payload_len;
+    if (resp->data_len > 0) {
+        memcpy(resp->data, cmd->payload, resp->data_len);
+    }
+}
 /**
   * @brief  初始化命令分发器
   */
@@ -78,6 +96,8 @@ void CommandDispatcher_Init(osMessageQueueId_t cmdQueue, osMessageQueueId_t resp
     CommandDispatcher_RegisterHandler(CMD_SYS_STATUS_QUERY, SystemMonitor_HandleCommand);
     // lk
     CommandDispatcher_RegisterHandler(CMD_DATA_PASSTHROUGH, HID_test);
+    // CommandDispatcher_RegisterHandler(CMD_OLED_CTRL, OledShowCtrl_HandleCommand);
+    CommandDispatcher_RegisterHandler(CMD_MPU6050_DATA, MPU6050_HandleCommand);
 }
 
 /**
@@ -125,8 +145,8 @@ void CommandDispatcherTask(void *argument)
                 continue;
             }
             
-            printf("[Dispatcher] ✅ Received command: 0x%02X from src=%d\n", 
-                   cmd->command_id, cmd->source);
+            // printf("[Dispatcher] ✅ Received command: 0x%02X from src=%d\n", 
+            //        cmd->command_id, cmd->source);
             
             // 查找对应的处理器
             handler = FindHandler(cmd->command_id);

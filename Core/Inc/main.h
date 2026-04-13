@@ -48,7 +48,10 @@ extern osSemaphoreId_t BinarySemUartHandle;
 extern osEventFlagsId_t LedTriggerEventHandle;
 extern osTimerId_t BreathLedTimerHandle;
 extern osTimerId_t BrtLedStaTimerHandle; 
+extern osEventFlagsId_t UartEventHandle;
 extern uint8_t Rx_Data;
+extern uint8_t Rx2_DMABuf[30];
+extern uint8_t data[11];
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -76,9 +79,6 @@ void memory_stats_print(void);
 void MemPool_Init(void);
 #endif
 
-// 旧的任务声明已废弃,保留仅用于兼容
-// void StartvSerialHandlerTask(void *argument);
-// void StartLedTask(void *argument);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -99,6 +99,9 @@ void MemPool_Init(void);
 #define LED_TRIGGER_EVENT_SERIAL   (1 << 0)
 #define LED_TRIGGER_EVENT_BUTTON   (1 << 1)
 #define LED_TRIGGER_EVENT_WKUP     (1 << 2)
+
+#define UART1_REC_FLAG             (1 << 0)
+#define UART2_REC_FLAG             (1 << 1)
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

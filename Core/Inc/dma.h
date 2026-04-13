@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    usart.h
+  * @file    dma.h
   * @brief   This file contains all the function prototypes for
-  *          the usart.c file
+  *          the dma.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USART_H__
-#define __USART_H__
+#ifndef __DMA_H__
+#define __DMA_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,34 +28,19 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* DMA memory to memory transfer handles -------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
-extern UART_HandleTypeDef huart1;
-
-extern UART_HandleTypeDef huart2;
-
 /* USER CODE BEGIN Private defines */
-
-// UART2 DMA 接收配置
-#define UART2_DMA_BUF_SIZE    64  // DMA 缓冲区大小(至少能容纳3包MPU6050数据)
-#define MPU6050_FRAME_SIZE    11  // 每包MPU6050数据大小(10字节数据+1字节校验和)
-#define MPU6050_BATCH_COUNT   3   // 每次发送的包数
 
 /* USER CODE END Private defines */
 
-void MX_USART1_UART_Init(void);
-void MX_USART2_UART_Init(void);
+void MX_DMA_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
-// UART2 DMA 接收初始化
-void UART2_DMA_Receive_Init(void);
-// 启动 UART2 DMA 接收
-void UART2_Start_DMA_Receive(void);
-// 获取 DMA 接收到的数据
-uint8_t* UART2_GetReceivedData(uint16_t *length);
 
 /* USER CODE END Prototypes */
 
@@ -63,5 +48,5 @@ uint8_t* UART2_GetReceivedData(uint16_t *length);
 }
 #endif
 
-#endif /* __USART_H__ */
+#endif /* __DMA_H__ */
 

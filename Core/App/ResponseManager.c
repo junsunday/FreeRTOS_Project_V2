@@ -59,9 +59,9 @@ void ResponseManagerTask(void *argument)
             }
             
             if (resp->target_channel == CHAN_UART || resp->target_channel == CHAN_BOTH) {
-                if (SendToUART(resp) != 0) {
-                    printf("[ResponseMgr] UART send failed\n");
-                }
+                // if (SendToUART(resp) != 0) {
+                //     printf("[ResponseMgr] UART send failed\n");
+                // }
             }
             
             // ✅ 响应发送完毕,释放内存
@@ -95,23 +95,55 @@ static int8_t SendToHID(Response_t *resp)
 {
     // 检查USB设备状态
     if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
+        printf("[ResponseMgr] ❌ USB not configured (state=%d)\n", hUsbDeviceFS.dev_state);
         return -1;
     }
     
-    // 准备发送数据(最多64字节)
-    uint8_t hidData[64] = {0};
-    uint16_t copyLen = (resp->data_len > 64) ? 64 : resp->data_len;
+    // 使用静态缓冲区,避免异步发送时栈数据被破坏
+    static uint8_t hidData[64];  // static: 生命周期贯穿整个程序运行
     
-    // 构建HID数据包: [命令ID][状态][数据...]
+    // 准备发送数据(最多64字节)
+    memset(hidData, 0, sizeof(hidData));  // 清零
+    uint16_t copyLen = (resp->data_len > 62) ? 62 : resp->data_len;  // 预留2字节给command_id和status
+    
+    // ✅ 构建HID数据包: [命令ID][状态][数据...]
     hidData[0] = resp->command_id;
     hidData[1] = resp->status;
-    if (copyLen > 0 && copyLen <= 62) {
+    if (copyLen > 0) {
         memcpy(&hidData[2], resp->data, copyLen);
     }
     
-    // 发送
-    int8_t result = USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, hidData, 64);
-    return (result == USBD_OK) ? 0 : -1;
+    // ✅ 调试日志: 打印即将发送的数据
+    printf("[HID TX] cmd=0x%02X status=0x%02X len=%d data:", 
+           hidData[0], hidData[1], copyLen + 2);
+    for (uint16_t i = 0; i < copyLen + 2 && i < 16; i++) {
+        printf(" %02X", hidData[i]);
+    }
+    if (copyLen + 2 > 16) printf(" ...");
+    printf("\n");
+    
+    // ✅ 重试机制: 处理USBD_BUSY情况
+    int8_t result;
+    uint8_t retry = 3;
+    while (retry-- > 0) {
+        result = USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, hidData, 64);
+        
+        if (result == USBD_OK) {
+            break;  // 发送成功
+        } else if (result == USBD_BUSY) {
+            printf("[ResponseMgr] ⚠️ HID endpoint busy, retry (%d left)\n", retry);
+            osDelay(5);  // 等待5ms后重试
+        } else {
+            printf("[ResponseMgr] ❌ HID send failed: result=%d\n", result);
+            return -1;
+        }
+    }
+    
+    if (result != USBD_OK) {
+        printf("[ResponseMgr] ❌ HID send failed after retries\n");
+        return -1;
+    }
+    return 0;
 }
 
 /**

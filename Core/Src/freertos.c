@@ -31,6 +31,7 @@
 #include "ResponseManager.h"
 #include "LedController.h"
 #include "SystemMonitor.h"
+// #include "OledShowController.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,14 +79,14 @@ osThreadId_t CommandDispTaskHandle;
 const osThreadAttr_t CommandDispTask_attributes = {
   .name = "CommandDispTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityHigh1,
 };
 /* Definitions for RespoMangerTask */
 osThreadId_t RespoMangerTaskHandle;
 const osThreadAttr_t RespoMangerTask_attributes = {
   .name = "RespoMangerTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityHigh1,
 };
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
@@ -122,6 +123,11 @@ osEventFlagsId_t LedTriggerEventHandle;
 const osEventFlagsAttr_t LedTriggerEvent_attributes = {
   .name = "LedTriggerEvent"
 };
+/* Definitions for UartEvent */
+osEventFlagsId_t UartEventHandle;
+const osEventFlagsAttr_t UartEvent_attributes = {
+  .name = "UartEvent"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -148,6 +154,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   // 初始化各模块
   LedController_Init();
+  // OLED_Init();
+  // OLED_Clear(0);
+  // OLED_Test_Menu3();
   SystemMonitor_Init();
   /* USER CODE END Init */
 
@@ -223,6 +232,9 @@ void MX_FREERTOS_Init(void) {
   /* Create the event(s) */
   /* creation of LedTriggerEvent */
   LedTriggerEventHandle = osEventFlagsNew(&LedTriggerEvent_attributes);
+
+  /* creation of UartEvent */
+  UartEventHandle = osEventFlagsNew(&UartEvent_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */

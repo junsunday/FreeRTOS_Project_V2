@@ -28,6 +28,9 @@ extern "C" {
 #define CMD_LED_BREATH_START    0x02
 #define CMD_LED_BREATH_STOP     0x03
 
+// MPU6050 传感器数据命令
+#define CMD_MPU6050_DATA        0x04
+
 // 系统监控命令
 #define CMD_SYS_STATUS_QUERY    0x10
 #define CMD_SYS_RESET           0x11
@@ -37,6 +40,7 @@ extern "C" {
 
 // 保留扩展
 #define CMD_RESERVED            0xFF
+#define CMD_OLED_CTRL           0xAA
 
 /* ========== 命令状态定义 ========== */
 #define CMD_STATUS_SUCCESS      0x00
@@ -63,6 +67,13 @@ typedef struct {
     uint16_t data_len;                  // 数据长度
     uint8_t target_channel;             // 目标输出通道
 } Response_t;
+
+typedef struct {
+    float accel[3];
+    float gyro[3];
+    float angle[3];
+    float temperature;
+} MPU6050Frame_t;
 
 /* ========== 输出通道定义 ========== */
 #define CHAN_HID        0x01
